@@ -30,7 +30,7 @@ public class Calculations
         ropeLength = Mathf.Sqrt(Mathf.Pow(middlePosition.x, 2) + Mathf.Pow(middlePosition.y, 2));
 
         if (currentPoint.localScale.x != currentPoint.localScale.y)
-            Debug.Log("Point X.Scale != Y.Scale");
+            Debug.LogError("Point X.Scale != Y.Scale");
 
         ropeLength /= currentPoint.localScale.x;
         ropeLength *= 2;
@@ -39,9 +39,9 @@ public class Calculations
     }
 
     // Function to Return Rope Angle
-    public float GetRopeAngle(Vector3 currentPosition, Vector3 nextPosition, Transform currentPoint)
+    public float GetRopeAngle(Transform currentPoint, Vector3 nextPosition)
     {
-        Vector3 dir = currentPosition - nextPosition;
+        Vector3 dir = currentPoint.position - nextPosition;
         dir = currentPoint.InverseTransformDirection(dir);
         angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
 

@@ -47,6 +47,9 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: ClickedPoints
+    uniqueID: 904250055
+    locked: 0
   - name: Points
     uniqueID: 4243229811
     locked: 0

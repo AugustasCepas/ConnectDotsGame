@@ -19,7 +19,7 @@ public class PointsScript : MonoBehaviour
         StartLevel();
     }
 
-    #region On Enable Functions
+    #region Level Start Functions
 
     //Function To Check If Required GameObjects Are Atttached to Script GameObject & Prepare Other Variables
     void PrepareVariables()
@@ -76,7 +76,24 @@ public class PointsScript : MonoBehaviour
         else Debug.LogError("Error! There must be more than one point in a game!");
     }
 
+    /// Function To Create Point
+    public GameObject CreatePoint(int childNumber, int x, int y)
+    {
+        GameObject newPoint; PointScript newPointScript;
+        var prefabObject = (GameObject)AssetDatabase.LoadMainAssetAtPath(prefabPath);
+        newPoint = (GameObject)PrefabUtility.InstantiatePrefab(prefabObject);
+        newPoint.name = childNumber.ToString();
+        newPoint.transform.parent = gameObject.transform;
+
+        newPointScript = newPoint.GetComponent<PointScript>();
+        newPointScript.MovePoint(x, y);
+
+        return newPoint;
+    }
+
     #endregion
+
+    #region Interaction With Points Functions 
 
     public void OnCorrectPointClicked()
     {
@@ -107,13 +124,14 @@ public class PointsScript : MonoBehaviour
         }
     }
 
+    // IEnumerator For Rope Drawing If Next Point Clicked Before Previous Point Rope Drawn
     IEnumerator DrawRope(PointScript previousPointScript, PointScript currentPointScript, LinkedListNode<GameObject> currentPointNode, bool isLast)
     {
         PointScript previousPreviousPointScript;
         RopeScript currentRopeScript = previousPointScript.GetRope().GetComponent<RopeScript>();
 
-        // If Not First
-        if (currentPointNode.Previous.Value != pointsList.First.Value)
+        // If Not First Rope Being Drawn
+        if (currentPointNode.Previous.Value != pointsList.First.Value && !isLast)
         {
             previousPreviousPointScript = currentPointNode.Previous.Previous.Value.GetComponent<PointScript>();
 
@@ -124,15 +142,15 @@ public class PointsScript : MonoBehaviour
             }
         }
 
-        //If Last
+        //If Last Point Clicked (Last-1 Rope Being Drawn)
         if (isLast)
         {
             while (!currentRopeScript.IsDrawingFinished())
             {
                 yield return null;
             }
-
-            currentRopeScript.TransformRope(pointsList.First.Value, currentPointScript, currentRope, true);
+            // Set Rope (currentPointScript) From currentRope To pointsList.First.Value 
+            TransformRope(pointsList.First.Value, currentPointScript, currentRope, true);
 
             while (!currentPointScript.GetRope().GetComponent<RopeScript>().IsDrawingFinished())
             {
@@ -148,9 +166,11 @@ public class PointsScript : MonoBehaviour
             LinkedListNode<GameObject> currentRopeNode = pointsList.Find(currentRope);
             currentRope = currentRopeNode.Next.Value;
 
-            ropeScript.TransformRope(currentPointNode.Previous.Value, previousPointScript, currentRope, false);
+            // Set Rope (previousPointScript) From currentPointNode.Previous.Value To currentRope
+            TransformRope(currentPointNode.Previous.Value, previousPointScript, currentRope, false);
         }
     }
+
     IEnumerator EndLevel()
     {
         yield return new WaitForSeconds(2);
@@ -159,6 +179,7 @@ public class PointsScript : MonoBehaviour
         gameScript.SelectGameLevel();
 
     }
+
     public void DeletePoints()
     {
         if (gameObject.transform.childCount > 0)
@@ -170,18 +191,35 @@ public class PointsScript : MonoBehaviour
         }
     }
 
-    /// Function To Create Point
-    public GameObject CreatePoint(int childNumber, int x, int y)
+    #endregion
+
+    public LinkedList<GameObject> GetPointsList()
     {
-        GameObject newPoint; PointScript newPointScript;
-        var prefabObject = (GameObject)AssetDatabase.LoadMainAssetAtPath(prefabPath);
-        newPoint = (GameObject)PrefabUtility.InstantiatePrefab(prefabObject);
-        newPoint.name = childNumber.ToString();
-        newPoint.transform.parent = gameObject.transform;
+        return pointsList;
+    }
 
-        newPointScript = newPoint.GetComponent<PointScript>();
-        newPointScript.MovePoint(x, y);
+    //Function To Transform Rope's Angle Length And Position
+    public void TransformRope(GameObject nextPoint, PointScript currentPointScript, GameObject currentPoint, bool last)
+    {
 
-        return newPoint;
+        Vector2 middlePosition = new Vector2();
+        float ropeLength = 0;
+        float angle = 0;
+        Calculations calculations = new Calculations();
+        RopeScript currentRopeScript = currentPointScript.GetRope().GetComponent<RopeScript>();
+
+        // Set Rope Middle Position
+        middlePosition = calculations.GetMiddlePosition(currentPoint.transform.position, nextPoint.transform.position, last);
+        currentRopeScript.SetMiddle(middlePosition);
+
+        // Set Rope Length
+        SpriteRenderer spriteRender = currentPointScript.GetRope().GetComponent<SpriteRenderer>();
+        ropeLength = calculations.GetRopeLength(middlePosition, currentPoint.transform);
+        currentRopeScript.SetRopeLength(ropeLength);
+
+        // Set Rope Angle
+        angle = calculations.GetRopeAngle(currentPoint.transform, nextPoint.transform.position);
+        currentRopeScript.SetRopeAngle(angle);
+        currentRopeScript.gameObject.SetActive(true);
     }
 }

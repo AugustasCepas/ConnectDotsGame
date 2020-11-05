@@ -77,6 +77,9 @@ public class PointScript : MonoBehaviour
                     if (hit.collider.gameObject.GetComponent<PointScript>().isClickable)
                     {
                         animator.SetTrigger("Disappear");
+                        Renderer textRenderer = GetComponent<Renderer>();
+                        textRenderer.sortingLayerName = "ClickedPoints";
+
                         pointsScript.OnCorrectPointClicked();
 
                         if (hit.collider.GetComponent<CircleCollider2D>() != null)
@@ -112,5 +115,10 @@ public class PointScript : MonoBehaviour
         float y = (float)Screen.height * (float)yPos / 1000;
         Vector3 BRSPosition = Camera.main.ScreenToWorldPoint(new Vector3(x, y, 0)); // Get bottom right screen position and move pointsList accordingly
         transform.position = new Vector2(BRSPosition.x, BRSPosition.y);
+    }
+
+    public PointsScript GetPointsScript()
+    {
+        return pointsScript;
     }
 }

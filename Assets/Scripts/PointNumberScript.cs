@@ -1,97 +1,319 @@
 ﻿using UnityEngine;
-using TMPro;
+using System.Collections.Generic;
 
 public class PointNumberScript : MonoBehaviour
 {
-    private TMP_Text textObject;
-    private float distanceFromCenterX = 0;
-    private float distanceFromCenterY = 0;
-    private int halfWidth = 0;
-    private int halfHeight = 0;
-    private float pointRadius = 0;
+    private float textDistFromPoint = 0;
+    private GameObject thisPointObj;
+    [SerializeField] private Transform closestObjTransform;
+    [SerializeField] private Transform secondClosestObjTransform;
+    [SerializeField] private float screenUsage = (float)98 / (float)100; // 98% Of Screen Can Be Used To Place Point Number Text
+    private bool isBetweenXAndY = false;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        textObject = GetComponent<TMP_Text>();
-        pointRadius = transform.parent.GetComponent<CircleCollider2D>().radius;
-        transform.Translate(pointRadius, 0, 0);
-
-        halfWidth = Screen.width / 2;
-        halfHeight = Screen.height / 2;
-
-        IsOutOfMap();
+        SetStartingPosition();
+        MoveToScreenIfOut();
     }
 
-    // Update is called once per frame
-    void Update()
+    // Function To Get Closest Points And Position Text Accordingly
+    private void SetStartingPosition()
     {
-        // IsOutOfMap();
+        PointScript thisPointScript = null;
+        PointsScript thisPointsScript = null;
+        LinkedList<GameObject> pointsList = null;
+
+        GetTextDistanceFromPoint();
+
+        thisPointScript = gameObject.GetComponentInParent(typeof(PointScript), true) as PointScript;
+        thisPointObj = thisPointScript.gameObject;
+        thisPointsScript = thisPointScript.GetPointsScript();
+        pointsList = thisPointsScript.GetPointsList();
+
+        GetClosestPoints(pointsList.First);
+        SetTextPosition();
     }
-    void IsOutOfMap()
+
+    private void GetTextDistanceFromPoint()
     {
-        Vector3 coordinates = Camera.main.WorldToScreenPoint(transform.position);
-        distanceFromCenterX = Vector3.Distance(new Vector3(halfWidth, 0f, 0f), new Vector3(coordinates.x, 0f, 0f));
-        distanceFromCenterY = Vector3.Distance(new Vector3(0f, halfHeight, 0f), new Vector3(0f, coordinates.y, 0f));
+        textDistFromPoint = transform.parent.GetComponent<CircleCollider2D>().radius;
+        textDistFromPoint *= transform.parent.localScale.x;
+    }
 
+    #region  GetClosestsPoints
 
-        if (OutOfMap(distanceFromCenterX, halfWidth, distanceFromCenterY, halfHeight))
+    // Function To Get Two Closest Points, Second Is For A Reason If ClosestPoint.X|Y == ThisPoint.X|Y
+    private void GetClosestPoints(LinkedListNode<GameObject> firstPointNode)
+    {
+        float distFromClosestObj = float.MaxValue;
+        float distFromSecondClosestObj = float.MaxValue;
+        float distFromCurrentObj = float.MinValue;
+
+        while (firstPointNode != null)
         {
-            if (OutOfMapX(distanceFromCenterX, halfWidth))
+            if (firstPointNode.Value.gameObject != thisPointObj)
             {
-                if (OutOfMapAtLeft(coordinates, halfWidth))
+                distFromCurrentObj = Vector3.Distance(firstPointNode.Value.transform.position, transform.position);
+
+                // If Current Point Is Closer Than Closest One Yet
+                if (distFromCurrentObj < distFromClosestObj)
                 {
-                    transform.Translate(pointRadius, 0, 0);
+                    if (closestObjTransform != null)
+                    {
+                        if (ArePointsNotInSingleLine(firstPointNode.Value.transform.position))
+                        {
+                            secondClosestObjTransform = closestObjTransform;
+                        }
+                    }
+
+                    closestObjTransform = firstPointNode.Value.transform;
+                    distFromClosestObj = distFromCurrentObj;
                 }
-                else
+
+                // If Current Point Is Closer Than Closest One Yet, But Closer Then Second Closest Yet
+                else if (distFromCurrentObj < distFromSecondClosestObj)
                 {
-                    transform.Translate(-pointRadius, 0, 0);
+                    if (ArePointsNotInSingleLine(firstPointNode.Value.transform.position))
+                    {
+                        secondClosestObjTransform = firstPointNode.Value.transform;
+                        distFromSecondClosestObj = distFromCurrentObj;
+                    }
+                }
+            }
+            firstPointNode = firstPointNode.Next;
+        }
+    }
+
+    // Function For Situation If Closest Point X|Y == This Point X|Y
+    // To Check If ThisPoint, ClosestObject & 2ndClosestObject Are Not In One Line
+    private bool ArePointsNotInSingleLine(Vector3 currentPointNodePos)
+    {
+        Vector3 closestObjectPos = closestObjTransform.transform.position;
+        Vector3 thisPointObjPos = thisPointObj.transform.position;
+
+        if (!AreEqual(closestObjectPos.x, currentPointNodePos.x) && !AreEqual(thisPointObjPos.y, currentPointNodePos.y))
+        {
+            return true;
+        }
+        else if (!AreEqual(closestObjectPos.y, currentPointNodePos.y) && !AreEqual(thisPointObjPos.x, currentPointNodePos.x))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    #endregion
+
+    #region MoveTextAccordingToClosestPoints
+
+    // Function To Place Text Position According To Closest Points
+    private void SetTextPosition()
+    {
+        float XDistanceBetweenThisAndClosest = XDifference(closestObjTransform);
+        float XDistanceBetweenThisAndSecond = XDifference(secondClosestObjTransform);
+        MoveAtXAxis(GetMovementPosititon(XDistanceBetweenThisAndClosest, XDistanceBetweenThisAndSecond));
+
+        float YDistanceBetweenThisAndClosest = YDifference(closestObjTransform);
+        float YDistanceBetweenThisAndSecond = YDifference(secondClosestObjTransform);
+
+        MoveAtYAxis(-GetMovementPosititon(YDistanceBetweenThisAndClosest, YDistanceBetweenThisAndSecond));
+    }
+
+    private float GetMovementPosititon(float distFromThisToClosest, float distFromThisToSecond)
+    {
+        float distFromThisToClosestABS = Mathf.Abs(distFromThisToClosest);
+        float distFromThisToSecondABS = Mathf.Abs(distFromThisToSecond);
+
+        // If ClosestPoint.X != ThisPoint.X
+        if (distFromThisToClosest != 0)
+        {
+            // If Closest Point Does Not Collide With This Point
+            if (distFromThisToClosestABS > textDistFromPoint * 2)
+            {
+                if (distFromThisToClosest > 0)
+                {
+                    return textDistFromPoint;
+                }
+                if (distFromThisToClosest < 0)
+                {
+                    return -textDistFromPoint;
                 }
             }
             else
             {
-                if (OutOfMapAtBottom(coordinates, halfHeight))
+                if (secondClosestObjTransform != null)
                 {
-                    transform.Translate(0, -pointRadius, 0);
-                }
-                else
-                {
-                    transform.Translate(0, pointRadius, 0);
+                    if (distFromThisToClosest > 0 && distFromThisToSecond > 0)
+                    {
+                        return textDistFromPoint;
+                    }
+                    else if (distFromThisToClosest < 0 && distFromThisToSecond < 0)
+                    {
+                        return -textDistFromPoint;
+                    }
+
+                    // If Three Points Are In One Line
+                    else if (distFromThisToClosestABS < distFromThisToSecondABS)
+                    {
+                        if (distFromThisToClosest > 0)
+                        {
+                            if (isBetweenXAndY)
+                                return -textDistFromPoint;
+
+                            isBetweenXAndY = true;
+                            return textDistFromPoint;
+                        }
+                        else if (distFromThisToClosest < 0)
+                        {
+                            if (isBetweenXAndY)
+                                return textDistFromPoint;
+
+                            isBetweenXAndY = true;
+                            return -textDistFromPoint;
+                        }
+                    }
+                    else if (distFromThisToClosestABS > distFromThisToSecondABS)
+                    {
+                        if (distFromThisToSecond > 0)
+                        {
+                            if (isBetweenXAndY)
+                                return textDistFromPoint;
+
+                            isBetweenXAndY = true;
+                            return -textDistFromPoint;
+                        }
+                        else if (distFromThisToSecond < 0)
+                        {
+                            if (isBetweenXAndY)
+                                return -textDistFromPoint;
+
+                            isBetweenXAndY = true;
+                            return textDistFromPoint;
+                        }
+
+                    }
                 }
             }
-        }
 
-    }
-    static bool OutOfMap(float distanceFromCenterX, int halfWidth, float distanceFromCenterY, int halfHeight)
-    {
-        return distanceFromCenterX > halfWidth || distanceFromCenterY > halfHeight;
-    }
-    static bool OutOfMapX(float distanceFromCenterX, int halfWidth)
-    {
-        return distanceFromCenterX > halfWidth;
-    }
-    static bool OutOfMapAtLeft(Vector3 coordinates, int halfWidth)
-    {
-        return halfWidth - coordinates.x > halfWidth;
-    }
-    static bool OutOfMapAtBottom(Vector3 coordinates, int halfHeight)
-    {
-        return halfHeight - coordinates.y < halfHeight;
-    }
-    private void OnTriggerStay2D(Collider2D other)
-    {
-        if (other.gameObject.tag == "PointNumber")
+
+        }
+        // If Closest Object X == This Object X, Then Place Text X According 2nd Closest
+        else
         {
-            TMP_Text otherObject = other.gameObject.GetComponent<TMP_Text>();
-            TMP_Text thisObject = this.gameObject.GetComponent<TMP_Text>();
-            int otherObjectInt = int.Parse(otherObject.text);
-            int thisObjectInt = int.Parse(thisObject.text);
-
-
-            if (thisObjectInt < otherObjectInt)
+            if (secondClosestObjTransform != null)
             {
-                transform.Translate((-2 * pointRadius), 0, 0);
+                if (distFromThisToSecond != 0)
+                {
+                    if (distFromThisToSecond > 0)
+                    {
+                        return textDistFromPoint;
+                    }
+                    else
+                    {
+                        return -textDistFromPoint;
+                    }
+                }
+            }
+
+        }
+        return 0;
+    }
+
+    // X Difference Between Script's Object And Parameter Given Object 
+    private float XDifference(Transform other)
+    {
+        return transform.position.x - other.position.x;
+    }
+
+    // Y Difference Between Script's Object And Parameter Given Object 
+    private float YDifference(Transform other)
+    {
+        return transform.position.y - other.position.y;
+    }
+
+    private bool AreEqual(float a, float b)
+    {
+        return a == b;
+    }
+
+    #endregion
+
+
+    #region MoveToScreenIfOut Functions
+
+    // Function To Get If Text Is Out Of Map
+    private void MoveToScreenIfOut()
+    {
+        float XDistanceFromMiddle = 0;
+        float YDistanceFromMiddle = 0;
+        float screenWidth = (float)Screen.width;
+        float screenHeight = (float)Screen.height;
+
+        Vector3 thisObjectCoords = Camera.main.WorldToScreenPoint(transform.position);
+
+        XDistanceFromMiddle = Vector3.Distance(new Vector3((screenWidth / 2), 0f, 0f), new Vector3(thisObjectCoords.x, 0f, 0f));
+        YDistanceFromMiddle = Vector3.Distance(new Vector3(0f, (screenHeight / 2), 0f), new Vector3(0f, thisObjectCoords.y, 0f));
+
+        float maxWidth = screenWidth / 2 * screenUsage;
+        float maxHeight = screenHeight / 2 * screenUsage;
+
+        if (IsBigger(XDistanceFromMiddle, maxWidth) || IsBigger(YDistanceFromMiddle, maxHeight))
+        {
+            // Is Object At X Axis Is Out Of Screen
+            if (IsBigger(XDistanceFromMiddle, maxWidth))
+            {
+                if (IsOutAtBegining(screenWidth, thisObjectCoords.x, maxWidth))
+                {
+                    MoveAtXAxis(2 * textDistFromPoint);
+                }
+                else if (IsOutAtFinish(thisObjectCoords.x, maxWidth))
+                {
+                    MoveAtXAxis(-2 * textDistFromPoint);
+                }
+            }
+
+            // If Object At Y Axis Is Out Of Screen
+            if (IsBigger(YDistanceFromMiddle, maxHeight))
+            {
+                if (IsOutAtBegining(screenHeight, thisObjectCoords.y, maxHeight))
+                {
+                    MoveAtYAxis(2 * textDistFromPoint);
+                }
+                else if (IsOutAtFinish(thisObjectCoords.y, maxHeight))
+                {
+                    MoveAtYAxis(-2 * textDistFromPoint);
+                }
             }
         }
+    }
+
+    // Is Object Is Out Of Screen
+    private bool IsBigger(float a, float b)
+    {
+        return a > b;
+    }
+
+    // Function To Check If Object Is Out Of Screen At Begining (Left/Bottom Corner)
+    private bool IsOutAtBegining(float screenLimitation, float objectCoordinate, float textMaxPosition)
+    {
+        return screenLimitation - textMaxPosition > objectCoordinate;
+    }
+
+    // Function To Check If Object Is Out Of Screen At Finish (Right/Top Corner)
+    private bool IsOutAtFinish(float objectCoordinate, float textMaxPosition)
+    {
+        return objectCoordinate > textMaxPosition;
+    }
+
+    #endregion
+
+    private void MoveAtYAxis(float value)
+    {
+        transform.Translate(0, value, 0);
+    }
+
+    private void MoveAtXAxis(float value)
+    {
+        transform.Translate(value, 0, 0);
     }
 }
