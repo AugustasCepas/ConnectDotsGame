@@ -11,8 +11,6 @@ public class PointsScript : MonoBehaviour
     private GameObject currentPoint = null;
     private GameObject currentRope = null;
 
-    private string prefabPath = "Assets/Prefab/Point.prefab";
-
     void OnEnable()
     {
         PrepareVariables();
@@ -43,7 +41,7 @@ public class PointsScript : MonoBehaviour
             gameScript = gameObject.GetComponent<GameScript>();
         }
 
-        if ((GameObject)AssetDatabase.LoadMainAssetAtPath(prefabPath) == null)
+        if (Resources.Load<GameObject>("Prefab/Point") == null)
         {
             Debug.Log("Error! Point prefab can not be accesed.");
         }
@@ -80,8 +78,9 @@ public class PointsScript : MonoBehaviour
     public GameObject CreatePoint(int childNumber, int x, int y)
     {
         GameObject newPoint; PointScript newPointScript;
-        var prefabObject = (GameObject)AssetDatabase.LoadMainAssetAtPath(prefabPath);
-        newPoint = (GameObject)PrefabUtility.InstantiatePrefab(prefabObject);
+        var prefabObject = Resources.Load<GameObject>("Prefab/Point");
+        newPoint = (GameObject)Instantiate(prefabObject);
+
         newPoint.name = childNumber.ToString();
         newPoint.transform.parent = gameObject.transform;
 
