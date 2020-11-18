@@ -8,7 +8,6 @@ public class PointNumberScript : MonoBehaviour
     [SerializeField] private Transform closestObjTransform;
     [SerializeField] private Transform secondClosestObjTransform;
     [SerializeField] private float screenUsage = (float)98 / (float)100; // 98% Of Screen Can Be Used To Place Point Number Text
-    private bool isBetweenXAndY = false;
 
     private void Start()
     {
@@ -106,20 +105,71 @@ public class PointNumberScript : MonoBehaviour
 
     #region MoveTextAccordingToClosestPoints
 
+    private void TranslateObjectXY(Transform objectToTranslate, float x, float y)
+    {
+        objectToTranslate.transform.Translate(x, y, 0);
+    }
     // Function To Place Text Position According To Closest Points
     private void SetTextPosition()
     {
-        float XDistanceBetweenThisAndClosest = XDifference(closestObjTransform);
-        float XDistanceBetweenThisAndSecond = XDifference(secondClosestObjTransform);
-        MoveAtXAxis(GetMovementPosititon(XDistanceBetweenThisAndClosest, XDistanceBetweenThisAndSecond));
+        float thisPointX = thisPointObj.transform.position.x;
+        float thisPointY = thisPointObj.transform.position.y;
 
-        float YDistanceBetweenThisAndClosest = YDifference(closestObjTransform);
-        float YDistanceBetweenThisAndSecond = YDifference(secondClosestObjTransform);
+        float XDistanceBetweenThisAndClosest = XDifference(thisPointObj.transform, closestObjTransform);
+        float XDistanceBetweenThisAndSecond = XDifference(thisPointObj.transform, secondClosestObjTransform);
 
-        MoveAtYAxis(-GetMovementPosititon(YDistanceBetweenThisAndClosest, YDistanceBetweenThisAndSecond));
+        float YDistanceBetweenThisAndClosest = YDifference(thisPointObj.transform, closestObjTransform);
+        float YDistanceBetweenThisAndSecond = YDifference(thisPointObj.transform, secondClosestObjTransform);
+
+        if (!IsInLine(closestObjTransform.transform.position.x, thisPointX, secondClosestObjTransform.transform.position.x))
+        {
+            MoveAtXAxis(GetMovementPosititon(XDistanceBetweenThisAndClosest, XDistanceBetweenThisAndSecond, thisPointX));
+            MoveAtYAxis(-GetMovementPosititon(YDistanceBetweenThisAndClosest, YDistanceBetweenThisAndSecond, thisPointY));
+        }
     }
 
-    private float GetMovementPosititon(float distFromThisToClosest, float distFromThisToSecond)
+    private bool IsInLine(float a, float b, float c)
+    {
+        if ((a > b && b > c) || (a < b && b < c))
+        {
+            int i = 0;
+            List<Transform> allObjects = new List<Transform>();
+
+            foreach (Transform child in transform)
+            {
+                float xMovement = -textDistFromPoint;
+                float yMovement = -textDistFromPoint;
+                allObjects.Add(child);
+
+                if (i % 2 == 1)
+                    xMovement *= -1;
+
+                if (i > 1)
+                    yMovement *= -1;
+
+                TranslateObjectXY(child, xMovement, yMovement);
+                i++;
+            }
+
+            float minDistance = 0; int fahrestLocation = 0;
+            for (i = 0; i < allObjects.Count; i++)
+            {
+                float distFromClosestObj = Vector3.Distance(allObjects[i].transform.position, closestObjTransform.position);
+                float distFromSecondClosestObj = Vector3.Distance(allObjects[i].transform.position, secondClosestObjTransform.position);
+
+                if (distFromClosestObj > minDistance && distFromSecondClosestObj > textDistFromPoint)
+                {
+                    minDistance = distFromClosestObj;
+                    fahrestLocation = i;
+                }
+            }
+            transform.position = allObjects[fahrestLocation].transform.position;
+
+            return true;
+        }
+        return false;
+    }
+    private float GetMovementPosititon(float distFromThisToClosest, float distFromThisToSecond, float thisPointPosition)
     {
         float distFromThisToClosestABS = Mathf.Abs(distFromThisToClosest);
         float distFromThisToSecondABS = Mathf.Abs(distFromThisToSecond);
@@ -128,7 +178,7 @@ public class PointNumberScript : MonoBehaviour
         if (distFromThisToClosest != 0)
         {
             // If Closest Point Does Not Collide With This Point
-            if (distFromThisToClosestABS > textDistFromPoint * 2)
+            if (distFromThisToClosestABS > (textDistFromPoint * 2))
             {
                 if (distFromThisToClosest > 0)
                 {
@@ -155,42 +205,18 @@ public class PointNumberScript : MonoBehaviour
                     // If Three Points Are In One Line
                     else if (distFromThisToClosestABS < distFromThisToSecondABS)
                     {
-                        if (distFromThisToClosest > 0)
-                        {
-                            if (isBetweenXAndY)
-                                return -textDistFromPoint;
-
-                            isBetweenXAndY = true;
-                            return textDistFromPoint;
-                        }
-                        else if (distFromThisToClosest < 0)
-                        {
-                            if (isBetweenXAndY)
-                                return textDistFromPoint;
-
-                            isBetweenXAndY = true;
+                        if (distFromThisToClosest > thisPointPosition)
                             return -textDistFromPoint;
-                        }
+                        else
+                            return textDistFromPoint;
+
                     }
-                    else if (distFromThisToClosestABS > distFromThisToSecondABS)
+                    else
                     {
-                        if (distFromThisToSecond > 0)
-                        {
-                            if (isBetweenXAndY)
-                                return textDistFromPoint;
-
-                            isBetweenXAndY = true;
+                        if (distFromThisToSecond > thisPointPosition)
                             return -textDistFromPoint;
-                        }
-                        else if (distFromThisToSecond < 0)
-                        {
-                            if (isBetweenXAndY)
-                                return -textDistFromPoint;
-
-                            isBetweenXAndY = true;
+                        else
                             return textDistFromPoint;
-                        }
-
                     }
                 }
             }
@@ -220,15 +246,15 @@ public class PointNumberScript : MonoBehaviour
     }
 
     // X Difference Between Script's Object And Parameter Given Object 
-    private float XDifference(Transform other)
+    private float XDifference(Transform a, Transform b)
     {
-        return transform.position.x - other.position.x;
+        return a.position.x - b.position.x;
     }
 
     // Y Difference Between Script's Object And Parameter Given Object 
-    private float YDifference(Transform other)
+    private float YDifference(Transform a, Transform b)
     {
-        return transform.position.y - other.position.y;
+        return a.position.y - b.position.y;
     }
 
     private bool AreEqual(float a, float b)
