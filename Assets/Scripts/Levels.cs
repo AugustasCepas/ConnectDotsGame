@@ -4,6 +4,7 @@ using UnityEngine;
 public class Levels
 {
     public List<Level> levels { get; private set; }
+    private int currentLevel = 0;
 
     public Levels()
     {
@@ -52,4 +53,19 @@ public class Levels
     {
         return value >= minimum && value <= maximum;
     }
+
+    public void SetCurrentLevel(int levelIndex)
+    {
+        currentLevel = levelIndex;
+    }
+
+    public Level GetNextLevel()
+    {
+        if (levels[currentLevel + 1] != null)
+            return levels[currentLevel + 1];
+
+        else
+            return levels[currentLevel];
+    }
+
 }

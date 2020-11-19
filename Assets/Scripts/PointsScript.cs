@@ -10,9 +10,14 @@ public class PointsScript : MonoBehaviour
     private LinkedList<GameObject> pointsList = null;
     private GameObject currentPoint = null;
     private GameObject currentRope = null;
+    private AudioSource audioSource;
+    [SerializeField] private GameObject finishBackground;
 
     void OnEnable()
     {
+        DeletePoints();
+        finishBackground.SetActive(false);
+
         PrepareVariables();
         StartLevel();
     }
@@ -24,6 +29,7 @@ public class PointsScript : MonoBehaviour
     {
         level = new Level();
         pointsList = new LinkedList<GameObject>();
+        audioSource = GetComponent<AudioSource>();
 
         if (gameScript != null)
         {
@@ -43,7 +49,11 @@ public class PointsScript : MonoBehaviour
 
         if (Resources.Load<GameObject>("Prefab/Point") == null)
         {
-            Debug.Log("Error! Point prefab can not be accesed.");
+            Debug.LogError("Error! Point prefab can not be accesed.");
+        }
+        if (finishBackground == null)
+        {
+            Debug.LogError("Finish background not attached!");
         }
     }
 
@@ -172,10 +182,11 @@ public class PointsScript : MonoBehaviour
 
     IEnumerator EndLevel()
     {
-        yield return new WaitForSeconds(2);
-
-        DeletePoints();
-        gameScript.SelectGameLevel();
+        finishBackground.SetActive(true);
+        audioSource.Play();
+        yield return new WaitForSeconds(3);
+        // gameScript.LoadNextLevel();
+        // gameScript.SelectGameLevel();
 
     }
 

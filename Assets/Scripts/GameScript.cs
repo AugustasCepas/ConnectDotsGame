@@ -24,6 +24,11 @@ public class GameScript : MonoBehaviour
         ProcessJSONData();
         PrepareDropdown();
     }
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+            SelectGameLevel();
+    }
 
     #region On Start Functions 
 
@@ -106,6 +111,8 @@ public class GameScript : MonoBehaviour
     public void StartGame()
     {
         currentLevel = levelsList.GetLevelsList()[levelsDropdown.value];
+        levelsList.SetCurrentLevel(levelsDropdown.value);
+
         gameScene.SetActive(true);
         levelSelectionScene.SetActive(false);
     }
@@ -115,5 +122,14 @@ public class GameScript : MonoBehaviour
     {
         levelSelectionScene.SetActive(true);
         gameScene.SetActive(false);
+    }
+    public void LoadNextLevel()
+    {
+        if (levelsList.GetNextLevel() != currentLevel)
+            currentLevel = levelsList.GetNextLevel();
+
+        gameScene.SetActive(false);
+        gameScene.SetActive(true);
+        levelSelectionScene.SetActive(false);
     }
 }

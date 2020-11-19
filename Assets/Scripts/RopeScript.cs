@@ -12,13 +12,18 @@ public class RopeScript : MonoBehaviour
     private Vector2 startPosition;
     private Vector2 positionsDifference;
     private bool drawingFinished = false;
+    private AudioSource audioSource;
+    public AudioClip ropeExtenstionSound;
 
     // Start is called before the first frame update
     void Start()
     {
+        audioSource = GetComponent<AudioSource>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         GetDesiredRopeData();
         SetSpriteSize(0);
+        if (!audioSource.isPlaying)
+            audioSource.PlayOneShot(ropeExtenstionSound);
     }
 
     // Update is called once per frame
@@ -71,6 +76,7 @@ public class RopeScript : MonoBehaviour
         else
         {
             drawingFinished = true;
+            audioSource.Stop();
         }
     }
 

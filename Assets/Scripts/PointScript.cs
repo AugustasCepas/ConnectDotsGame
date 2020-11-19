@@ -12,9 +12,11 @@ public class PointScript : MonoBehaviour
     private PointsScript pointsScript = null;
     private GameObject rope = null;
     private Animator animator;
+    private AudioSource audioSource;
     void Start()
     {
         animator = GetComponent<Animator>();
+        audioSource = GetComponent<AudioSource>();
 
         ValidateVariables();
         Initialise();
@@ -77,9 +79,9 @@ public class PointScript : MonoBehaviour
                     if (hit.collider.gameObject.GetComponent<PointScript>().isClickable)
                     {
                         animator.SetTrigger("Disappear");
+                        audioSource.Play();
                         Renderer textRenderer = GetComponent<Renderer>();
                         textRenderer.sortingLayerName = "ClickedPoints";
-
                         pointsScript.OnCorrectPointClicked();
 
                         if (hit.collider.GetComponent<CircleCollider2D>() != null)
