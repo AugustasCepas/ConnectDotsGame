@@ -7,7 +7,7 @@ public class PointNumberScript : MonoBehaviour
     private GameObject thisPointObj;
     [SerializeField] private Transform closestObjTransform;
     [SerializeField] private Transform secondClosestObjTransform;
-    [SerializeField] private float screenUsage = (float)98 / (float)100; // 98% Of Screen Can Be Used To Place Point Number Text
+    [Range (0.9f, 1f)][SerializeField] private float screenUsage = (float)0.98; // 98% Of Screen Can Be Used To Place Point Number Text
 
     private void Start()
     {
@@ -22,21 +22,19 @@ public class PointNumberScript : MonoBehaviour
         PointsScript thisPointsScript = null;
         LinkedList<GameObject> pointsList = null;
 
-        GetTextDistanceFromPoint();
-
         thisPointScript = gameObject.GetComponentInParent(typeof(PointScript), true) as PointScript;
         thisPointObj = thisPointScript.gameObject;
         thisPointsScript = thisPointScript.GetPointsScript();
         pointsList = thisPointsScript.GetPointsList();
 
+        GetTextDistanceFromPoint(thisPointsScript);
         GetClosestPoints(pointsList.First);
         SetTextPosition();
     }
-
-    private void GetTextDistanceFromPoint()
+    private void GetTextDistanceFromPoint(PointsScript ps)
     {
         textDistFromPoint = transform.parent.GetComponent<CircleCollider2D>().radius;
-        textDistFromPoint *= transform.parent.localScale.x;
+        textDistFromPoint *= ps.GetPointScale();
     }
 
     #region  GetClosestsPoints

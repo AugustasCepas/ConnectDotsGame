@@ -5,6 +5,7 @@ public class Calculations
     private Vector2 middlePosition;
     private float ropeLength = 0;
     private float angle = 0;
+    private float pointScale = 0;
 
 
     // Function To Return Middle Position Between Objects
@@ -29,10 +30,10 @@ public class Calculations
     {
         ropeLength = Mathf.Sqrt(Mathf.Pow(middlePosition.x, 2) + Mathf.Pow(middlePosition.y, 2));
 
-        if (currentPoint.localScale.x != currentPoint.localScale.y)
-            Debug.LogError("Point X.Scale != Y.Scale");
+        if (pointScale == 0)
+            Debug.LogError("pointScale == 0");
 
-        ropeLength /= currentPoint.localScale.x;
+        ropeLength /= pointScale;
         ropeLength *= 2;
 
         return ropeLength;
@@ -46,5 +47,10 @@ public class Calculations
         angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
 
         return angle;
+    }
+
+    public void SetPointScale(float ps)
+    {
+        pointScale = ps;
     }
 }

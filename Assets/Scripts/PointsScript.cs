@@ -12,9 +12,12 @@ public class PointsScript : MonoBehaviour
     private GameObject currentRope = null;
     private AudioSource audioSource;
     [SerializeField] private GameObject finishBackground;
+    [Range(0.4f, 1f)] [SerializeField] private float pointScale = 0.5f;
+
 
     void OnEnable()
     {
+        SetPointScale();
         DeletePoints();
         finishBackground.SetActive(false);
 
@@ -55,6 +58,13 @@ public class PointsScript : MonoBehaviour
         {
             Debug.LogError("Finish background not attached!");
         }
+    }
+
+
+    public void SetPointScale()
+    {
+        var prefabObject = Resources.Load<GameObject>("Prefab/Point");
+        prefabObject.transform.localScale = new Vector3(pointScale, pointScale, pointScale);
     }
 
     // Function To Read Level's Points And Set Them In The Game
@@ -216,6 +226,8 @@ public class PointsScript : MonoBehaviour
         float ropeLength = 0;
         float angle = 0;
         Calculations calculations = new Calculations();
+        calculations.SetPointScale(pointScale);
+
         RopeScript currentRopeScript = currentPointScript.GetRope().GetComponent<RopeScript>();
 
         // Set Rope Middle Position
@@ -231,5 +243,10 @@ public class PointsScript : MonoBehaviour
         angle = calculations.GetRopeAngle(currentPoint.transform, nextPoint.transform.position);
         currentRopeScript.SetRopeAngle(angle);
         currentRopeScript.gameObject.SetActive(true);
+    }
+
+    public float GetPointScale()
+    {
+        return pointScale;
     }
 }

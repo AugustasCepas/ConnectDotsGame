@@ -13,6 +13,7 @@ public class GameScript : MonoBehaviour
     [SerializeField] private GameObject gameScene = null;
     private Levels levelsList = null;
     public Level currentLevel = null;
+    public float pointScale;
 
 
     void Start()
