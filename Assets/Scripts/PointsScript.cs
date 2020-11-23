@@ -11,16 +11,14 @@ public class PointsScript : MonoBehaviour
     private GameObject currentPoint = null;
     private GameObject currentRope = null;
     private AudioSource audioSource;
-    [SerializeField] private GameObject finishBackground;
-    [Range(0.4f, 1f)] [SerializeField] private float pointScale = 0.5f;
+    private float pointScale = 0;
 
 
     void OnEnable()
     {
         SetPointScale();
         DeletePoints();
-        finishBackground.SetActive(false);
-
+        gameScript.SetActiveUI(false);
         PrepareVariables();
         StartLevel();
     }
@@ -54,16 +52,13 @@ public class PointsScript : MonoBehaviour
         {
             Debug.LogError("Error! Point prefab can not be accesed.");
         }
-        if (finishBackground == null)
-        {
-            Debug.LogError("Finish background not attached!");
-        }
     }
 
 
     public void SetPointScale()
     {
         var prefabObject = Resources.Load<GameObject>("Prefab/Point");
+        pointScale = gameScript.GetPointScale();
         prefabObject.transform.localScale = new Vector3(pointScale, pointScale, pointScale);
     }
 
@@ -88,8 +83,8 @@ public class PointsScript : MonoBehaviour
 
             currentPoint = pointsList.First.Value;
             currentRope = currentPoint;
-            currentPoint.SetActive(true);
             currentPoint.GetComponent<PointScript>().SetClickable();
+            currentPoint.SetActive(true);
         }
         else Debug.LogError("Error! There must be more than one point in a game!");
     }
@@ -105,7 +100,9 @@ public class PointsScript : MonoBehaviour
         newPoint.transform.parent = gameObject.transform;
 
         newPointScript = newPoint.GetComponent<PointScript>();
+        newPointScript.SetPhoneBezzlesWidth(gameScript.GetPhoneBezzlesWidth());
         newPointScript.MovePoint(x, y);
+
 
         return newPoint;
     }
@@ -177,7 +174,9 @@ public class PointsScript : MonoBehaviour
 
             }
 
-            StartCoroutine(EndLevel());
+            gameScript.SetActiveUI(true);
+            audioSource.Play();
+
         }
         else
         {
@@ -188,16 +187,6 @@ public class PointsScript : MonoBehaviour
             // Set Rope (previousPointScript) From currentPointNode.Previous.Value To currentRope
             TransformRope(currentPointNode.Previous.Value, previousPointScript, currentRope, false);
         }
-    }
-
-    IEnumerator EndLevel()
-    {
-        finishBackground.SetActive(true);
-        audioSource.Play();
-        yield return new WaitForSeconds(3);
-        // gameScript.LoadNextLevel();
-        // gameScript.SelectGameLevel();
-
     }
 
     public void DeletePoints()

@@ -7,7 +7,7 @@ public class PointNumberScript : MonoBehaviour
     private GameObject thisPointObj;
     [SerializeField] private Transform closestObjTransform;
     [SerializeField] private Transform secondClosestObjTransform;
-    [Range (0.9f, 1f)][SerializeField] private float screenUsage = (float)0.98; // 98% Of Screen Can Be Used To Place Point Number Text
+    [Range(0.9f, 1f)] [SerializeField] private float screenUsage = (float)0.98; // 98% Of Screen Can Be Used To Place Point Number Text
 
     private void Start()
     {
@@ -155,7 +155,7 @@ public class PointNumberScript : MonoBehaviour
                 float distFromClosestObj = Vector3.Distance(allObjects[i].transform.position, closestObjTransform.position);
                 float distFromSecondClosestObj = Vector3.Distance(allObjects[i].transform.position, secondClosestObjTransform.position);
 
-                if (distFromClosestObj > minDistance && distFromSecondClosestObj > textDistFromPoint)
+                if (distFromClosestObj > minDistance && distFromSecondClosestObj > (textDistFromPoint * (float)1.1))
                 {
                     minDistance = distFromClosestObj;
                     fahrestLocation = i;

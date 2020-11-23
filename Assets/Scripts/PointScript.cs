@@ -13,6 +13,7 @@ public class PointScript : MonoBehaviour
     private GameObject rope = null;
     private Animator animator;
     private AudioSource audioSource;
+    private float phoneBezzlesWidth = 0;
     void Start()
     {
         animator = GetComponent<Animator>();
@@ -110,12 +111,28 @@ public class PointScript : MonoBehaviour
         return rope;
     }
 
+    public void SetPhoneBezzlesWidth(float bezzleWidth)
+    {
+        phoneBezzlesWidth = bezzleWidth;
+        // if (bezzleWidth >= 0)
+        // else
+        //             Debug.LogError("Phone bezzles width must be >= 0!");
+    }
+
     /// Function To Move Point From Top Left Corner Accordingly To X And Y
     public void MovePoint(int xPos, int yPos)
     {
+        float usableScreenWidth = 1f - (2 * phoneBezzlesWidth);
+        float screenWidthStart = Screen.width * phoneBezzlesWidth;
+
         float x = (float)Screen.width * (float)xPos / 1000;
         float y = (float)Screen.height * (float)yPos / 1000;
+
+        x *= usableScreenWidth;
+        x += screenWidthStart;
+
         Vector3 BRSPosition = Camera.main.ScreenToWorldPoint(new Vector3(x, y, 0)); // Get bottom right screen position and move pointsList accordingly
+
         transform.position = new Vector2(BRSPosition.x, BRSPosition.y);
     }
 
