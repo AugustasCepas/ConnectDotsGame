@@ -7,6 +7,8 @@ public class PointNumberScript : MonoBehaviour
     private GameObject thisPointObj;
     [SerializeField] private Transform closestObjTransform;
     [SerializeField] private Transform secondClosestObjTransform;
+    [SerializeField] private bool doesNotCollideWithClosest;
+
     [Range(0.9f, 1f)] [SerializeField] private float screenUsage = (float)0.98; // 98% Of Screen Can Be Used To Place Point Number Text
 
     private void Start()
@@ -121,8 +123,17 @@ public class PointNumberScript : MonoBehaviour
 
         if (!IsInLine(closestObjTransform.transform.position.x, thisPointX, secondClosestObjTransform.transform.position.x))
         {
-            MoveAtXAxis(GetMovementPosititon(XDistanceBetweenThisAndClosest, XDistanceBetweenThisAndSecond, thisPointX));
-            MoveAtYAxis(-GetMovementPosititon(YDistanceBetweenThisAndClosest, YDistanceBetweenThisAndSecond, thisPointY));
+            float xMovement = GetMovementPosititon(XDistanceBetweenThisAndClosest, XDistanceBetweenThisAndSecond, thisPointX);
+            float yMovement = GetMovementPosititon(YDistanceBetweenThisAndClosest, YDistanceBetweenThisAndSecond, thisPointY);
+            if (xMovement == 0)
+                Debug.LogError("Error! Point number X movement can not be 0.");
+            else
+                MoveAtXAxis(xMovement);
+
+            if (yMovement == 0)
+                Debug.LogError("Error! Point number Y movement can not be 0.");
+            else
+                MoveAtYAxis(yMovement);
         }
     }
 
@@ -175,53 +186,37 @@ public class PointNumberScript : MonoBehaviour
         // If ClosestPoint.X != ThisPoint.X
         if (distFromThisToClosest != 0)
         {
-            // If Closest Point Does Not Collide With This Point
-            if (distFromThisToClosestABS > (textDistFromPoint * 2))
+            if (secondClosestObjTransform != null)
             {
-                if (distFromThisToClosest > 0)
+                if (distFromThisToClosest > 0 && distFromThisToSecond > 0)
                 {
                     return textDistFromPoint;
                 }
-                if (distFromThisToClosest < 0)
+                else if (distFromThisToClosest < 0 && distFromThisToSecond < 0)
                 {
                     return -textDistFromPoint;
                 }
-            }
-            else
-            {
-                if (secondClosestObjTransform != null)
+
+                // If Three Points Are In One Line
+                else if (distFromThisToClosestABS < distFromThisToSecondABS)
                 {
-                    if (distFromThisToClosest > 0 && distFromThisToSecond > 0)
-                    {
-                        return textDistFromPoint;
-                    }
-                    else if (distFromThisToClosest < 0 && distFromThisToSecond < 0)
-                    {
+                    if (distFromThisToClosest > thisPointPosition)
                         return -textDistFromPoint;
-                    }
-
-                    // If Three Points Are In One Line
-                    else if (distFromThisToClosestABS < distFromThisToSecondABS)
-                    {
-                        if (distFromThisToClosest > thisPointPosition)
-                            return -textDistFromPoint;
-                        else
-                            return textDistFromPoint;
-
-                    }
                     else
-                    {
-                        if (distFromThisToSecond > thisPointPosition)
-                            return -textDistFromPoint;
-                        else
-                            return textDistFromPoint;
-                    }
+                        return textDistFromPoint;
+
+                }
+                else
+                {
+                    if (distFromThisToSecond > thisPointPosition)
+                        return -textDistFromPoint;
+                    else
+                        return textDistFromPoint;
                 }
             }
-
-
         }
-        // If Closest Object X == This Object X, Then Place Text X According 2nd Closest
+
+        // If Closest Object X/Y == This Object X/Y, Then Place Text X/Y According 2nd Closest
         else
         {
             if (secondClosestObjTransform != null)

@@ -133,7 +133,7 @@ public class PointScript : MonoBehaviour
 
         Vector3 BRSPosition = Camera.main.ScreenToWorldPoint(new Vector3(x, y, 0)); // Get bottom right screen position and move pointsList accordingly
 
-        transform.position = new Vector2(BRSPosition.x, BRSPosition.y);
+        transform.position = new Vector3(BRSPosition.x, BRSPosition.y);
     }
 
     public PointsScript GetPointsScript()
