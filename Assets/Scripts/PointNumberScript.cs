@@ -166,7 +166,9 @@ public class PointNumberScript : MonoBehaviour
                 float distFromClosestObj = Vector3.Distance(allObjects[i].transform.position, closestObjTransform.position);
                 float distFromSecondClosestObj = Vector3.Distance(allObjects[i].transform.position, secondClosestObjTransform.position);
 
-                if (distFromClosestObj > minDistance && distFromSecondClosestObj > (textDistFromPoint * (float)1.1))
+                if (distFromClosestObj > minDistance
+                && distFromSecondClosestObj > textDistFromPoint
+                )
                 {
                     minDistance = distFromClosestObj;
                     fahrestLocation = i;
